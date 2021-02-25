@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Health</string>
+    <string name="login_tag_line">Make meditation a habit you love</string>
+    <string name="login_google">Continue with Google</string>
+    <string name="login_guest">Continue as Guest</string>
+    <string name="login_terms_statement">By creating an account you agree to our <b><u>terms of service</u></b> &amp; <b><u>privacy policy</u></b></string>
+    <string name="registration_question">Hi, what do your friends call you?</string>
+    <string name="registration_continue">Continue</string>
+    <string name="home_tag_line">A more mindful you</string>
+    <string name="home_sub_tag_line">building your meditation experience</string>
+    <string name="login_image">Login_image</string>
+    <string name="username">username</string>
+    <string name="button_to_get_to_prev_fragment">button to get to prev fragment</string>
+    <string name="name">name</string>
+    <string name="home_banner">Home banner</string>
+    <string name="todo">TODO</string>
+</resources>
