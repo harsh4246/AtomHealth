@@ -14,10 +14,18 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 public class LoginActivity extends AppCompatActivity {
     private static final int RC_SIGN_IN = 7;
     GoogleSignInClient mGoogleSignInClient;
+    private DatabaseReference mDatabase;
+    private FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,11 +35,13 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void init() {
+        mDatabase = FirebaseDatabase.getInstance().getReference();
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
         mGoogleSignInClient = GoogleSignIn.getClient(LoginActivity.this, gso);
+        mAuth = FirebaseAuth.getInstance();
         Button googleButton = findViewById(R.id.button_login_google);
         Button guestButton = findViewById(R.id.button_login_guest);
         googleButton.setOnClickListener(v -> loginWithGoogle());
@@ -56,12 +66,28 @@ public class LoginActivity extends AppCompatActivity {
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
-                goToRegistration(account.getIdToken());
+                assert account != null;
+                checkUserExists(account.getEmail(),account.getIdToken());
             } catch (ApiException e) {
                 Toast.makeText(LoginActivity.this,"Google sign in failed",Toast.LENGTH_SHORT).show();
                 Log.d("error",e.toString());
             }
         }
+    }
+
+    private void checkUserExists(String email, String idToken) {
+        mDatabase.child("users").orderByChild("email").equalTo(email).get().addOnCompleteListener(task -> {
+            if (!task.isSuccessful()) {
+                goToRegistration(idToken);
+            }
+            else {
+                if(task.getResult().getValue()==null){
+                    goToRegistration(idToken);
+                }else{
+                    firebaseAuthWithGoogle(idToken);
+                }
+            }
+        });
     }
 
     private void goToRegistration(String idToken) {
@@ -70,4 +96,25 @@ public class LoginActivity extends AppCompatActivity {
         startActivity(intent);
         finish();
     }
+
+    private void firebaseAuthWithGoogle(String idToken) {
+        AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        FirebaseUser user = mAuth.getCurrentUser();
+                        assert user != null;
+                        updateUi();
+                    } else {
+                        Toast.makeText(LoginActivity.this,"Unable to login with google",Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void updateUi() {
+        Intent intent = new Intent(LoginActivity.this,HomeActivity.class);
+        startActivity(intent);
+        finish();
+    }
+
 }
